@@ -1,10 +1,15 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from app.core.config import settings
 from app.core.logging import setup_logging
 from app.middleware.exception_handler import setup_exception_handlers
+
+limiter = Limiter(key_func=get_remote_address)
 
 
 def create_app() -> FastAPI:
@@ -21,6 +26,10 @@ def create_app() -> FastAPI:
         docs_url="/docs" if settings.debug else None,
         redoc_url="/redoc" if settings.debug else None,
     )
+
+    # Add rate limiter
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
     # Add CORS middleware
     app.add_middleware(
@@ -45,7 +54,7 @@ def create_app() -> FastAPI:
     from app.routers import auth, users, donors, messages, alerts, notifications
     from app.routers import donations, reports, donor_registrations
 
-    app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+    app.include_router(auth.router, prefix="/api/v1")
     app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
     app.include_router(
         donor_registrations.router,
