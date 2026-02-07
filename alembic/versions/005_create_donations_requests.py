@@ -18,7 +18,13 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute("CREATE TYPE urgencylevel AS ENUM ('low', 'medium', 'high', 'critical')")
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE urgencylevel AS ENUM ('low', 'medium', 'high', 'critical');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    """)
     
     op.create_table(
         'donations',

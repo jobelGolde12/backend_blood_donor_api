@@ -19,7 +19,13 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute("CREATE TYPE themepreference AS ENUM ('light', 'dark', 'system')")
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE themepreference AS ENUM ('light', 'dark', 'system');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    """)
     op.add_column('users', sa.Column('theme_preference', sa.Enum('light', 'dark', 'system', name='themepreference'), nullable=False, server_default='system'))
 
 

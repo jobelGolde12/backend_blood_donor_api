@@ -31,9 +31,27 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('id')
     )
     
-    op.execute("CREATE TYPE alerttype AS ENUM ('urgent_request', 'general_announcement', 'donation_drive')")
-    op.execute("CREATE TYPE priority AS ENUM ('low', 'medium', 'high', 'critical')")
-    op.execute("CREATE TYPE notificationtype AS ENUM ('alert', 'message_reply', 'system')")
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE alerttype AS ENUM ('urgent_request', 'general_announcement', 'donation_drive');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    """)
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE priority AS ENUM ('low', 'medium', 'high', 'critical');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    """)
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE notificationtype AS ENUM ('alert', 'message_reply', 'system');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    """)
     
     op.create_table(
         'alerts',

@@ -18,9 +18,27 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute("CREATE TYPE bloodtype AS ENUM ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')")
-    op.execute("CREATE TYPE availabilitystatus AS ENUM ('available', 'unavailable', 'recently_donated')")
-    op.execute("CREATE TYPE registrationstatus AS ENUM ('pending', 'approved', 'rejected')")
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE bloodtype AS ENUM ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    """)
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE availabilitystatus AS ENUM ('available', 'unavailable', 'recently_donated');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    """)
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE registrationstatus AS ENUM ('pending', 'approved', 'rejected');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    """)
     
     op.create_table(
         'donor_registrations',
