@@ -50,14 +50,34 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """Handle validation exceptions."""
-    logger.warning(f"Validation error: {exc.errors()}")
+    # Process errors to make them JSON serializable
+    errors = []
+    for error in exc.errors():
+        processed_error = {}
+        for key, value in error.items():
+            if key == 'ctx' and isinstance(value, dict):
+                # Handle the 'ctx' field which may contain non-serializable objects
+                processed_ctx = {}
+                for ctx_key, ctx_value in value.items():
+                    if isinstance(ctx_value, Exception):
+                        processed_ctx[ctx_key] = str(ctx_value)
+                    else:
+                        processed_ctx[ctx_key] = ctx_value
+                processed_error[key] = processed_ctx
+            elif isinstance(value, Exception):
+                processed_error[key] = str(value)
+            else:
+                processed_error[key] = value
+        errors.append(processed_error)
+    
+    logger.warning(f"Validation error: {errors}")
     return JSONResponse(
         status_code=422,
         content={
             "error": True,
             "message": "Validation failed",
             "type": "ValidationError",
-            "details": exc.errors(),
+            "details": errors,
             "path": str(request.url.path),
         },
     )
