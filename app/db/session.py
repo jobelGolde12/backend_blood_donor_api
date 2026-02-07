@@ -1,17 +1,14 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from app.core.config import settings
 
-# Create engine
+# Create engine - automatically use psycopg2 for PostgreSQL connections
 engine = create_engine(
     settings.database_url,
-    poolclass=StaticPool,
-    connect_args={"check_same_thread": False}
-    if "sqlite" in settings.database_url
-    else {},
+    pool_pre_ping=True,  # Verify connections before use
+    pool_recycle=300,    # Recycle connections every 5 minutes
     echo=settings.debug,
 )
 

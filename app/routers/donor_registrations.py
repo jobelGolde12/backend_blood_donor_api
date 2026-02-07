@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from typing import List
 
 from app.db.dependencies import get_db
@@ -21,22 +22,55 @@ async def create_registration(
     db: Session = Depends(get_db),
 ):
     """Create donor registration (public endpoint)."""
-    existing = db.query(DonorRegistration).filter(
+    # Check for any existing PENDING registration with the same contact number
+    existing_pending = db.query(DonorRegistration).filter(
         DonorRegistration.contact_number == registration.contact_number,
         DonorRegistration.status == "pending"
     ).first()
-    
-    if existing:
+
+    if existing_pending:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Registration already pending for this contact number"
         )
-    
-    db_registration = DonorRegistration(**registration.model_dump())
-    db.add(db_registration)
-    db.commit()
-    db.refresh(db_registration)
-    return db_registration
+
+    try:
+        db_registration = DonorRegistration(**registration.model_dump())
+        db.add(db_registration)
+        db.commit()
+        db.refresh(db_registration)
+        return db_registration
+    except IntegrityError as e:
+        db.rollback()  # Rollback the transaction on error
+        # Check if this is a unique constraint violation
+        if 'contact_number' in str(e.orig).lower() or 'unique constraint' in str(e.orig).lower():
+            # Check if there's already a pending registration (double-check)
+            existing_pending = db.query(DonorRegistration).filter(
+                DonorRegistration.contact_number == registration.contact_number,
+                DonorRegistration.status == "pending"
+            ).first()
+            
+            if existing_pending:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Registration already pending for this contact number"
+                )
+            else:
+                # This is a different constraint violation
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Contact number already registered with a different status"
+                )
+        else:
+            # Re-raise other integrity errors to be handled by the global exception handler
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Database constraint violation: {str(e.orig)}"
+            )
+    except Exception as e:
+        db.rollback()  # Rollback the transaction on error
+        # Re-raise the exception to be handled by the global exception handler
+        raise e
 
 
 @router.get("", response_model=List[DonorRegistrationResponse])

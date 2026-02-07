@@ -69,7 +69,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             else:
                 processed_error[key] = value
         errors.append(processed_error)
-    
+
     logger.warning(f"Validation error: {errors}")
     return JSONResponse(
         status_code=422,

@@ -10,13 +10,9 @@ echo ""
 # Update .env
 echo "📝 Updating .env file..."
 cat > .env << 'EOF'
-# Database
+# Database - Use the DATABASE_URL provided by Render in production
+# For local development, use the format below
 DATABASE_URL=postgresql://blood_donor_user:blood_donor_pass@localhost:5432/blood_donor_db
-DATABASE_HOST=localhost
-DATABASE_PORT=5432
-DATABASE_NAME=blood_donor_db
-DATABASE_USER=blood_donor_user
-DATABASE_PASSWORD=blood_donor_pass
 
 # JWT
 SECRET_KEY=dev-secret-key-change-in-production-12345

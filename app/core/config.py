@@ -1,4 +1,5 @@
 import os
+import json
 from typing import List
 from dotenv import load_dotenv
 
@@ -8,14 +9,13 @@ load_dotenv()
 
 class Settings:
     # Database
-    database_url: str = os.getenv(
-        "DATABASE_URL", "postgresql://user:password@localhost:5432/blood_donor_db"
-    )
-    database_host: str = os.getenv("DATABASE_HOST", "localhost")
-    database_port: int = int(os.getenv("DATABASE_PORT", "5432"))
-    database_name: str = os.getenv("DATABASE_NAME", "blood_donor_db")
-    database_user: str = os.getenv("DATABASE_USER", "user")
-    database_password: str = os.getenv("DATABASE_PASSWORD", "password")
+    @property
+    def database_url(self) -> str:
+        """Get database URL from environment variable with error handling."""
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            raise ValueError("DATABASE_URL environment variable is not set. Please configure your database connection.")
+        return database_url
 
     # JWT
     secret_key: str = os.getenv(
@@ -34,9 +34,14 @@ class Settings:
     environment: str = os.getenv("ENVIRONMENT", "production")
 
     # CORS
-    allowed_origins: List[str] = os.getenv(
-        "ALLOWED_ORIGINS", "http://localhost:3000"
-    ).split(",")
+    @property
+    def allowed_origins(self) -> List[str]:
+        origins_str = os.getenv("ALLOWED_ORIGINS", '["http://localhost:3000"]')
+        try:
+            return json.loads(origins_str)
+        except json.JSONDecodeError:
+            # Fallback to split if JSON parsing fails
+            return origins_str.split(",")
 
     # Redis
     redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
