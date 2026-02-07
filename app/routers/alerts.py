@@ -72,9 +72,8 @@ async def create_alert(
 @router.get("", response_model=List[AlertResponse])
 async def list_alerts(
     db: Session = Depends(get_db),
-    admin: User = Depends(get_current_admin),
 ):
-    """List all alerts (admin only)."""
+    """List all alerts (public)."""
     return db.query(Alert).order_by(Alert.created_at.desc()).all()
 
 
