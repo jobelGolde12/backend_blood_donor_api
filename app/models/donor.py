@@ -37,10 +37,21 @@ class DonorRegistration(Base):
     contact_number = Column(String, nullable=False, index=True)
     email = Column(String, nullable=True)
     age = Column(Integer, nullable=False)
-    blood_type = Column(Enum(BloodType), nullable=False)
+    blood_type = Column(
+        Enum("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", name="bloodtype"),
+        nullable=False,
+    )
     municipality = Column(String, nullable=False)
-    availability = Column(Enum(AvailabilityStatus), default=AvailabilityStatus.AVAILABLE, nullable=False)
-    status = Column(Enum(RegistrationStatus), default=RegistrationStatus.PENDING, nullable=False)
+    availability = Column(
+        Enum("available", "unavailable", "recently_donated", name="availabilitystatus"),
+        default="available",
+        nullable=False,
+    )
+    status = Column(
+        Enum("pending", "approved", "rejected", name="registrationstatus"),
+        default="pending",
+        nullable=False,
+    )
     review_reason = Column(Text, nullable=True)
     reviewed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     reviewed_at = Column(DateTime(timezone=True), nullable=True)
@@ -53,10 +64,19 @@ class DonorProfile(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
-    registration_id = Column(Integer, ForeignKey("donor_registrations.id"), nullable=False)
+    registration_id = Column(
+        Integer, ForeignKey("donor_registrations.id"), nullable=False
+    )
     age = Column(Integer, nullable=False)
-    blood_type = Column(Enum(BloodType), nullable=False)
+    blood_type = Column(
+        Enum("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", name="bloodtype"),
+        nullable=False,
+    )
     municipality = Column(String, nullable=False)
-    availability = Column(Enum(AvailabilityStatus), default=AvailabilityStatus.AVAILABLE, nullable=False)
+    availability = Column(
+        Enum("available", "unavailable", "recently_donated", name="availabilitystatus"),
+        default="available",
+        nullable=False,
+    )
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
